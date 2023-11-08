@@ -1,5 +1,10 @@
 import Main from "./main.js";
+import { NextUIProvider } from "@nextui-org/react";
 
 export default function Home() {
-  return Main();
+  return (
+    <NextUIProvider>
+      <Main />
+    </NextUIProvider>
+  );
 }
