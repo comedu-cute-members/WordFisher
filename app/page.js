@@ -1,3 +1,4 @@
+"use client";
 import Main from "./main.js";
 import { NextUIProvider } from "@nextui-org/react";
 
