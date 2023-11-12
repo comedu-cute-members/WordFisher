@@ -1,11 +1,11 @@
 "use client";
-import Main from "./main.js";
+import { Button } from "@nextui-org/react";
 import { NextUIProvider } from "@nextui-org/react";
 
-export default function Home() {
+export default function Result() {
   return (
     <NextUIProvider>
-      <Main />
+      <Button>click me!</Button>
     </NextUIProvider>
   );
 }
