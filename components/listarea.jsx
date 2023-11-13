@@ -18,21 +18,37 @@ export default function ListArea() {
     "00:06:32",
     "00:06:32",
     "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
+    "00:06:32",
   ];
 
   return (
-    <Card className="flex-auto max-w-[300px] h-fit">
-      <CardHeader>{'"brute force"의 검색결과'}</CardHeader>
-      <Divider />
-      <CardBody className="gap-2 px-5">
-        {wordList.map((time, i) => (
-          <Code className="w-fit" color="primary" key={i}>
-            {time}
-          </Code>
-        ))}
-      </CardBody>
-      <Divider />
-      <CardFooter>총 {wordList.length}개의 검색 결과</CardFooter>
-    </Card>
+    <div className="flex-auto max-w-[300px]">
+      <Card className="h-fit max-h-full">
+        <CardHeader>{'"brute force"의 검색결과'}</CardHeader>
+        <Divider />
+        <CardBody className="gap-2 px-5">
+          {wordList.map((time, i) => (
+            <Code className="w-fit" color="primary" key={i}>
+              {time}
+            </Code>
+          ))}
+        </CardBody>
+        <Divider />
+        <CardFooter>총 {wordList.length}개의 검색 결과</CardFooter>
+      </Card>
+    </div>
   );
 }

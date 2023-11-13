@@ -21,7 +21,7 @@ export default function Result() {
       <NextThemesProvider attribute="class" defaultTheme="light">
         <div className="w-full h-screen flex flex-col items-center">
           <Navigation breadcrumbs={breadcrumbs} />
-          <div className="w-full h-full flex flex-row p-8 gap-8 justify-center">
+          <div className="w-full h-[calc(100vh-64px)] flex flex-row gap-8 py-8 justify-center">
             <VideoArea />
             <ListArea />
           </div>
