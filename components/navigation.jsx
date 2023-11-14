@@ -7,9 +7,16 @@ import {
   Button,
 } from "@nextui-org/react";
 import { BsGithub } from "react-icons/bs";
+import { BiSolidHome, BiSolidVideos, BiSolidSearchAlt2 } from "react-icons/bi";
 import { Breadcrumbs, BreadcrumbItem } from "@nextui-org/react";
 import { GiFishing } from "react-icons/gi";
 import { ThemeSwitcher } from "./themeSwitcher";
+
+function provideIcon(type) {
+  if (type == "home") return <BiSolidHome />;
+  if (type == "search") return <BiSolidVideos />;
+  if (type == "result") return <BiSolidSearchAlt2 />;
+}
 
 const Navigation = ({ breadcrumbs }) => {
   return (
@@ -24,7 +31,7 @@ const Navigation = ({ breadcrumbs }) => {
             {breadcrumbs.map((item) => (
               <BreadcrumbItem
                 key={item.type}
-                startContent={item.icon}
+                startContent={provideIcon(item.type)}
                 href={item.link}
               >
                 {item.name}
