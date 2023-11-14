@@ -4,29 +4,32 @@ import VideoArea from "../../components/videoarea";
 import ListArea from "../../components/listarea";
 import { BiSolidHome, BiSolidVideos, BiSolidSearchAlt2 } from "react-icons/bi";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { NextUIProvider } from "@nextui-org/react";
 
 export default function Result() {
   var breadcrumbs = [
-    { type: "home", name: "Home", icon: <BiSolidHome /> },
+    { type: "home", name: "Home", icon: <BiSolidHome />, link: "/" },
     {
       type: "video",
       name: "알고리즘 4주차 강의",
       icon: <BiSolidVideos />,
+      link: "/search",
     },
-    { type: "search", name: "brute force", icon: <BiSolidSearchAlt2 /> },
+    {
+      type: "search",
+      name: "brute force",
+      icon: <BiSolidSearchAlt2 />,
+      link: "/result",
+    },
   ];
   return (
-    <NextUIProvider>
-      <NextThemesProvider attribute="class" defaultTheme="light">
-        <div className="w-full h-screen flex flex-col items-center">
-          <Navigation breadcrumbs={breadcrumbs} />
-          <div className="w-full h-[calc(100vh-64px)] flex flex-row gap-8 py-8 justify-center">
-            <VideoArea />
-            <ListArea />
-          </div>
+    <NextThemesProvider attribute="class" defaultTheme="light">
+      <div className="w-full h-screen flex flex-col items-center bg-background">
+        <Navigation breadcrumbs={breadcrumbs} />
+        <div className="w-full h-[calc(100vh-65px)] flex flex-row gap-8 py-8 justify-center">
+          <VideoArea />
+          <ListArea />
         </div>
-      </NextThemesProvider>
-    </NextUIProvider>
+      </div>
+    </NextThemesProvider>
   );
 }

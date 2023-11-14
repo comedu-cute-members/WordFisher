@@ -36,7 +36,7 @@ export default function ListArea() {
 
   return (
     <div className="flex-auto max-w-[300px]">
-      <Card className="h-fit max-h-full">
+      <Card className="h-fit max-h-full dark:bg-content2">
         <CardHeader>{'"brute force"의 검색결과'}</CardHeader>
         <Divider />
         <CardBody className="gap-2 px-5">

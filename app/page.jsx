@@ -1,11 +1,14 @@
 "use client";
-import Image from "next/image";
-import { NextUIProvider, Button } from "@nextui-org/react";
+import { Button, Link } from "@nextui-org/react";
+import { ThemeSwitcher } from "../components/themeSwitcher";
 
 export default function Home() {
   return (
-    <NextUIProvider>
-      <Button>실험용 버튼</Button>
-    </NextUIProvider>
+    <>
+      <ThemeSwitcher />
+      <Button as={Link} href="/search">
+        실험용 버튼
+      </Button>
+    </>
   );
 }
