@@ -21,8 +21,9 @@ export function ThemeSwitcher() {
         isIconOnly
         onClick={() => setTheme("dark")}
         className="bg-blue-100 text-blue-300"
-        startContent={<BsFillMoonFill size="20" />}
-      ></Button>
+      >
+        <BsFillMoonFill size="20" />
+      </Button>
     );
   else
     return (
@@ -30,7 +31,8 @@ export function ThemeSwitcher() {
         isIconOnly
         onClick={() => setTheme("light")}
         className="bg-zinc-800 text-blue-400"
-        startContent={<BsFillSunFill size="23" />}
-      ></Button>
+      >
+        <BsFillSunFill size="23" />
+      </Button>
     );
 }
