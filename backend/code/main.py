@@ -13,6 +13,7 @@ import pandas as pd
 from collections import Counter
 from datetime import datetime
 
+
 # 구글 서비스 계정 인증을 위한 환경변수 설정
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "word_fisher_credentials.json"
 
@@ -25,16 +26,16 @@ app = FastAPI()
 ##################### 함수 구현부 #######################
 # 구글 클라우드에 파일 업로드
 def upload_to_bucket(IP, audio_name, file_path):
-        storage_client = storage.Client()
-        bucket = storage_client.get_bucket(bucket_name)
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
 
-        # 클라이언트의 IP주소에 따른 개별 폴더 생성
-        folder_blob = bucket.blob(f"clients/client_{IP}/")
-        folder_blob.upload_from_string("")
+    # 클라이언트의 IP주소에 따른 개별 폴더 생성
+    folder_blob = bucket.blob(f"clients/client_{IP}/")
+    folder_blob.upload_from_string("")
 
-        # 오디오 파일 업로드
-        blob = bucket.blob(f"clients/client_{IP}/{audio_name}")
-        blob.upload_from_filename(file_path)
+    # 오디오 파일 업로드
+    blob = bucket.blob(f"clients/client_{IP}/{audio_name}")
+    blob.upload_from_filename(file_path)
 
 # 사용자가 업로드한 비디오 파일 저장
 def save_uploaded_file(file: UploadFile, destination: str):
@@ -53,19 +54,19 @@ def convert_video_to_audio(video_filename: str, audio_filename: str):
     soundfile.write(audio_filename, audio_time_series, sampleing_rate)
 
 # Speech to text 후 script.txt(전체 대본)와 data.csv(단어별 시작시간, 끝시간) 생성
-def recognize_speech(file_path: str, client_folder, IP, audio_name) -> speech.RecognizeResponse:
+def recognize_speech(file_path: str, client_folder, gcs_client_folder, audio_name) -> speech.RecognizeResponse:
     result_files = os.path.join(client_folder, "STT_results")
     os.makedirs(result_files, exist_ok=True)
-    script = os.path.join(result_files, "script.txt")
+    # script = os.path.join(result_files, "script.txt")
     data = os.path.join(result_files, "data.csv")
 
-    f1 = open(script,"w+", encoding="utf-8")
+    # f1 = open(script,"w+", encoding="utf-8")
     f2 = open(data, "w+", newline='', encoding="utf-8")
     csv_writer = csv.writer(f2)
 
     client = speech.SpeechClient()
 
-    audio = speech.RecognitionAudio(uri=f"gs://word_fisher/clients/client_{IP}/{audio_name}")
+    audio = speech.RecognitionAudio(uri=f"gs://word_fisher/{gcs_client_folder}/{audio_name}")
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=AudioSegment.from_wav(file_path).frame_rate,  
@@ -79,7 +80,7 @@ def recognize_speech(file_path: str, client_folder, IP, audio_name) -> speech.Re
     csv_writer.writerow(["word", "start_time", "end_time"])
     for result in result.results:
         alternative = result.alternatives[0]
-        f1.write(f"{alternative.transcript} ")
+        # f1.write(f"{alternative.transcript} ")
 
         for word_info in alternative.words:
             word = word_info.word
@@ -90,7 +91,7 @@ def recognize_speech(file_path: str, client_folder, IP, audio_name) -> speech.Re
 
             csv_writer.writerow(data)
 
-    f1.close()
+    # f1.close()
     f2.close()
 
 # 시작 시간이 어떤 시간 구간에 속하는 지 반환
@@ -121,25 +122,12 @@ def get_time_interval(timestamp):
 
     return f"{hour_interval_start:02d}:{minute_interval_start:02d}:{second_interval_start:02d}-{hour_interval_end:02d}:{minute_interval_end:02d}:{second_interval_end:02d}"
 
-# 클라이언트 폴더 삭제
-def local_cleanup_client(request: Request):
-    try:
-        IP = request.client.host
-        file_path = f"clients/client_{IP}"
-        if os.path.exists(file_path):
-            shutil.rmtree(file_path)
-            print(f"client_{IP} disconnected")
-    except Exception as e:
-        print({"Error": str(e)})
-
 # 구글 클라우드 스토리지 내 파일 삭제
-def gcs_cleanup_storage(request: Request):
-    IP = request.client.host
-
+def delete_gcs_file(file_path):
     client = storage.Client()
     bucket = client.get_bucket(bucket_name)
 
-    folder_prefix = f"clients/client_{IP}/"
+    folder_prefix = f"{file_path}/"
     blobs = bucket.list_blobs(prefix=folder_prefix)
 
     for blob in blobs:
@@ -151,7 +139,7 @@ def gcs_cleanup_storage(request: Request):
 @app.post("/upload")
 def upload_and_process(file: UploadFile, request: Request):
     try: 
-        # 클라이언트의 IP주소에 따른 개별 폴더 생성
+        # 클라이언트의 IP주소에 따른 개별 로컬폴더 생성
         IP = request.client.host
         clients_list = "clients"
         client_folder = os.path.join(clients_list, f"client_{IP}")
@@ -165,6 +153,9 @@ def upload_and_process(file: UploadFile, request: Request):
         audio_name = os.path.splitext(file.filename)[0] + '_audio.wav'
         audio_filename = os.path.join(uploaded_folder, audio_name)
 
+        # gcs내 클라이언트별 폴더 이름
+        gcs_client_folder = f"clients/client_{IP}"
+
         # 업로드된 비디오 파일 저장
         save_uploaded_file(file, video_filename)
 
@@ -175,17 +166,30 @@ def upload_and_process(file: UploadFile, request: Request):
         upload_to_bucket(IP, audio_name, audio_filename)
 
         # Speech to text 후 script(전체 대본)와 data(단어별 시작시간, 끝시간) 생성
-        recognize_speech(audio_filename, client_folder, IP, audio_name)
+        recognize_speech(audio_filename, client_folder, gcs_client_folder, audio_name)
+
+        # csv 데이터를 JSON으로 변환
+        result_files = os.path.join(client_folder, "STT_results")
+        data = os.path.join(result_files, "data.csv")
+        df = pd.read_csv(data)
+        json_audio_data_list = [df.iloc[i].to_json() for i in range(df.shape[0])]
+
+        # 클라이언트의 IP주소에 따른 개별 폴더 삭제(로컬, 구글 클라우드 스토리지)
+        file_path = f"clients/client_{IP}"
+        shutil.rmtree(file_path)
+        delete_gcs_file(gcs_client_folder)
+
+        return JSONResponse(content= {"audio_data": json_audio_data_list})
     except Exception as e:
-        return {"Error": str(e)}
+        return {"Error in upload_and_process": str(e)}
 
 # 탐색 단어 입력
 @app.post("/word_input/{word}")
-def word_count(word: str, request: Request):
+async def word_count(word: str, request: Request):
     try:
-        IP = request.client.host
-        data = f"clients/client_{IP}/STT_results/data.csv"
-        df = pd.read_csv(data)
+        json_audio_data = await request.json()
+        key = list(json_audio_data)[0]
+        df = pd.DataFrame(json_audio_data[key])
         df['start_time'] = df['start_time'].astype(str)
         df['end_time'] = df['end_time'].astype(str)
 
@@ -228,14 +232,4 @@ def word_count(word: str, request: Request):
         return JSONResponse(content={"timeline": timeline_list, "occurrences": occurrences})
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-# Word Fisher 사용 종료
-@app.get("/close")
-def close_connection(request: Request):
-    # 로컬 저장소: 연결 종료한 클라이언트 폴더 삭제
-    local_cleanup_client(request)
-    # 구글 클라우드 스토리지: 연결 종료한 클라이언트 폴더 삭제
-    gcs_cleanup_storage(request)
-
-    raise HTTPException(status_code=499, detail="Connection terminated by client")
 ########################################################
