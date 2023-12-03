@@ -1,6 +1,6 @@
 from google.cloud import speech
 from google.cloud import storage
-from fastapi import FastAPI, UploadFile, Request, HTTPException
+from fastapi import FastAPI, UploadFile, Request, HTTPException, Form, Depends
 import os
 import librosa
 import soundfile
@@ -12,7 +12,9 @@ from fastapi.responses import JSONResponse
 import pandas as pd
 from collections import Counter
 from datetime import datetime
-
+from pydantic import BaseModel
+import json
+import wave
 
 # 구글 서비스 계정 인증을 위한 환경변수 설정
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "word_fisher_credentials.json"
@@ -53,6 +55,14 @@ def convert_video_to_audio(video_filename: str, audio_filename: str):
     audio_time_series, sampleing_rate = librosa.core.load(audio_filename, sr=None)
     soundfile.write(audio_filename, audio_time_series, sampleing_rate)
 
+def get_audio_length(audio_filename:str):
+    with wave.open(audio_filename, "rb") as audio_file:
+        total_frames = audio_file.getnframes()
+        sample_rate = audio_file.getframerate()
+        duration_seconds = total_frames / float(sample_rate)
+
+    return duration_seconds
+    
 # Speech to text 후 script.txt(전체 대본)와 data.csv(단어별 시작시간, 끝시간) 생성
 def recognize_speech(file_path: str, client_folder, gcs_client_folder, audio_name) -> speech.RecognizeResponse:
     result_files = os.path.join(client_folder, "STT_results")
@@ -134,33 +144,51 @@ def delete_gcs_file(file_path):
         blob.delete()
 ########################################################     
 
+
+############### Base Model 클래스 정의부 #################
+class Upload(BaseModel):
+    file: UploadFile
+    ip: str
+
+    @classmethod
+    def as_form(
+        cls,
+        file: UploadFile = Form(...),
+        ip: str = Form(...)
+    ):
+        return cls(file=file,ip = ip)
+########################################################
+
+
 ################### HTTP 요청 처리부 ####################
 # 비디오 파일 업로드
 @app.post("/upload")
-def upload_and_process(file: UploadFile, request: Request):
+def upload_and_process(upload: Upload = Depends(Upload.as_form)):
     try: 
         # 클라이언트의 IP주소에 따른 개별 로컬폴더 생성
-        IP = request.client.host
+        IP = upload.ip
         clients_list = "clients"
         client_folder = os.path.join(clients_list, f"client_{IP}")
         os.makedirs(clients_list, exist_ok=True)
         os.makedirs(client_folder, exist_ok=True)
-
+        
         # 비디오파일과 오디오파일 경로 설정
         uploaded_folder = os.path.join(client_folder, "uploaded_files")
         os.makedirs(uploaded_folder, exist_ok=True)
-        video_filename = os.path.join(uploaded_folder, file.filename)
-        audio_name = os.path.splitext(file.filename)[0] + '_audio.wav'
+        video_filename = os.path.join(uploaded_folder, upload.file.filename)
+        audio_name = os.path.splitext(upload.file.filename)[0] + '_audio.wav'
         audio_filename = os.path.join(uploaded_folder, audio_name)
 
         # gcs내 클라이언트별 폴더 이름
         gcs_client_folder = f"clients/client_{IP}"
 
         # 업로드된 비디오 파일 저장
-        save_uploaded_file(file, video_filename)
+        save_uploaded_file(upload.file, video_filename)
 
         # 비디오에서 오디오 추출 및 오디오 파일 저장
         convert_video_to_audio(video_filename, audio_filename)
+
+        video_length = get_audio_length(audio_filename)
 
         # 오디오 파일을 구글 클라우드 스토리지에 업로드
         upload_to_bucket(IP, audio_name, audio_filename)
@@ -171,25 +199,28 @@ def upload_and_process(file: UploadFile, request: Request):
         # csv 데이터를 JSON으로 변환
         result_files = os.path.join(client_folder, "STT_results")
         data = os.path.join(result_files, "data.csv")
-        df = pd.read_csv(data)
-        json_audio_data_list = [df.iloc[i].to_json() for i in range(df.shape[0])]
+        csv_file = open(data, "r", encoding="utf-8")
+        audio_data_list = list(csv.reader(csv_file))[1:]
+        csv_file.close()
 
         # 클라이언트의 IP주소에 따른 개별 폴더 삭제(로컬, 구글 클라우드 스토리지)
         file_path = f"clients/client_{IP}"
         shutil.rmtree(file_path)
         delete_gcs_file(gcs_client_folder)
 
-        return JSONResponse(content= {"audio_data": json_audio_data_list})
+        return JSONResponse(content={
+            "audio_data_list": audio_data_list,
+            "video_length": video_length
+                                    })  
+                                     
     except Exception as e:
         return {"Error in upload_and_process": str(e)}
 
 # 탐색 단어 입력
 @app.post("/word_input/{word}")
-async def word_count(word: str, request: Request):
+def word_count(word: str, word_input: dict):
     try:
-        json_audio_data = await request.json()
-        key = list(json_audio_data)[0]
-        df = pd.DataFrame(json_audio_data[key])
+        df = pd.DataFrame(data=word_input["audio_data_list"], columns=["word", "start_time", "end_time"])
         df['start_time'] = df['start_time'].astype(str)
         df['end_time'] = df['end_time'].astype(str)
 
