@@ -1,7 +1,7 @@
 "use client";
 import ReactPlayer from "react-player";
-import { use, useEffect, useState } from "react";
-import { Skeleton, Button, Slider, slider } from "@nextui-org/react";
+import { useEffect, useState } from "react";
+import { Skeleton, Button, Slider } from "@nextui-org/react";
 import {
   BsFillPauseFill,
   BsFillPlayFill,
@@ -9,20 +9,23 @@ import {
   BsFillVolumeMuteFill,
 } from "react-icons/bs";
 import { useRef } from "react";
+import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-function VideoChart() {
+function VideoChart(props) {
+  var color = props.textColor ? "#ffffff" : "#000000";
   const option = {
     chart: {
       id: "apexchart-example",
       toolbar: { show: false },
       events: {
-        dataPointSelection: (event, chartContext, config) => {
-          console.log(chartContext, config);
+        click: (event, chartContext, config) => {
+          console.log(config.dataPointIndex);
         },
       },
+      zoom: { enabled: false },
     },
     stroke: {
       colors: ["#338EF7"],
@@ -41,7 +44,7 @@ function VideoChart() {
       axisBorder: { show: false },
     },
     xaxis: {
-      labels: { show: true, style: { colors: "#ffffff" } },
+      labels: { show: true, style: { colors: color } },
       axisTicks: { show: false },
       axisBorder: { show: false },
     },
@@ -49,15 +52,6 @@ function VideoChart() {
       enabled: false,
     },
     tooltip: { x: { show: false } },
-    annotations: {
-      xaxis: [
-        {
-          x: 5,
-          x2: 6,
-          fillColor: "#000000",
-        },
-      ],
-    },
   };
 
   const series = [
@@ -106,12 +100,35 @@ export default function VideoArea() {
   });
   const videoPlayerRef = useRef(null);
   const [sliderValue, setSliderValue] = useState(0);
+  const { theme, setTheme } = useTheme();
+
+  const [wasPlaying, setWasPlaying] = useState(false);
 
   const progressHandler = (state) => {
     if (!videoState.seeking) {
       setVideoState({ ...videoState, ...state });
       setSliderValue(state.played * 100);
     }
+  };
+
+  const seekHandler = (value) => {
+    setSliderValue(value);
+    videoPlayerRef.current.seekTo(value / 100);
+    setVideoState({
+      ...videoState,
+      playing: false,
+      played: value / 100,
+      seeking: true,
+    });
+  };
+
+  const seekMouseUpHandler = (value) => {
+    setVideoState({ ...videoState, playing: wasPlaying, seeking: false });
+  };
+
+  const setTimeHandler = (time, index) => {
+    setVideoState({ ...videoState, played: time });
+    videoPlayerRef.current.seekTo(time, "seconds");
   };
 
   var pauseIcon;
@@ -145,7 +162,7 @@ export default function VideoArea() {
           ref={videoPlayerRef}
           width={"100%"}
           height={"100%"}
-          url="https://www.youtube.com/watch?v=pSUydWEqKwE"
+          url="video/temp.mp4"
           controls={false}
           playing={videoState.playing}
           muted={videoState.muted}
@@ -158,9 +175,10 @@ export default function VideoArea() {
           className="bg-transparent"
           radius="full"
           size="sm"
-          onPress={() =>
-            setVideoState({ ...videoState, playing: !videoState.playing })
-          }
+          onPress={() => {
+            setVideoState({ ...videoState, playing: !videoState.playing });
+            setWasPlaying(!wasPlaying);
+          }}
         >
           {pauseIcon}
         </Button>
@@ -175,23 +193,29 @@ export default function VideoArea() {
         >
           {audioIcon}
         </Button>
-        <div className="pl-2.5">
+        <div className="pl-2.5 dark:text-white light:text-black">
           {videoPlayerRef.current
             ? formatTime(videoPlayerRef.current.getCurrentTime())
             : "0:00"}
         </div>
       </div>
       <Slider
+        aria-label="VideoTimeline"
         size="sm"
         minValue={0}
         maxValue={100}
         value={sliderValue}
+        onChange={seekHandler}
+        onChangeEnd={seekMouseUpHandler}
         classNames={{
           track: "border-s-blue-400",
           filler: "bg-blue-400",
         }}
       />
-      <VideoChart />
+      <VideoChart
+        setTimeHandler={setTimeHandler}
+        textColor={theme == "light"}
+      />
     </div>
   );
 }
