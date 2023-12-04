@@ -104,34 +104,6 @@ def recognize_speech(file_path: str, client_folder, gcs_client_folder, audio_nam
     # f1.close()
     f2.close()
 
-# 시작 시간이 어떤 시간 구간에 속하는 지 반환
-def get_time_interval(timestamp):
-    hours = datetime.strptime(timestamp, '%H:%M:%S').hour
-    minutes = datetime.strptime(timestamp, '%H:%M:%S').minute
-    seconds = datetime.strptime(timestamp, '%H:%M:%S').second
-
-    second_interval_start = seconds - (seconds % 10)
-    if (second_interval_start == 50):
-        second_interval_end = 00
-    else:
-        second_interval_end = second_interval_start + 10
-    
-    minute_interval_start = minutes
-    if (second_interval_start == 50) and (minute_interval_start == 59):
-        minute_interval_end = 00
-    elif (second_interval_start == 50) and (minute_interval_start != 59):
-        minute_interval_end = minute_interval_start + 1
-    else:
-        minute_interval_end = minute_interval_start
-
-    hour_interval_start = hours
-    if (second_interval_start == 50) and (minute_interval_start == 59):
-        hour_interval_end = hour_interval_end + 1
-    else:
-        hour_interval_end = hour_interval_start
-
-    return f"{hour_interval_start:02d}:{minute_interval_start:02d}:{second_interval_start:02d}-{hour_interval_end:02d}:{minute_interval_end:02d}:{second_interval_end:02d}"
-
 # 구글 클라우드 스토리지 내 파일 삭제
 def delete_gcs_file(file_path):
     client = storage.Client()
@@ -142,6 +114,22 @@ def delete_gcs_file(file_path):
 
     for blob in blobs:
         blob.delete()
+
+# 총 영상 시간을 10초 단위로 분할
+def divide_into_intervals(number):
+    intervals = []
+    for start in range(0, number + 1, 10):
+        end = min(start + 10, number + 1)
+        intervals.append((start, end - 1))
+    return intervals
+
+# 어떤 영상 구간에 포함되는지 체크
+def check(intervals, num):
+    for start, end in intervals:
+        if start <= num <= end:
+            return (start, end)
+    return None  # 범위에 속하지 않는 경우 None 반환
+
 ########################################################     
 
 
@@ -212,7 +200,7 @@ def upload_and_process(upload: Upload = Depends(Upload.as_form)):
             "audio_data_list": audio_data_list,
             "video_length": video_length
                                     })  
-                                     
+                                
     except Exception as e:
         return {"Error in upload_and_process": str(e)}
 
@@ -223,6 +211,8 @@ def word_count(word: str, word_input: dict):
         df = pd.DataFrame(data=word_input["audio_data_list"], columns=["word", "start_time", "end_time"])
         df['start_time'] = df['start_time'].astype(str)
         df['end_time'] = df['end_time'].astype(str)
+
+        video_length = int(word_input['video_length'])
 
         # 시작 시간의 밀리초 제거
         for i in range(len(df['start_time'])):
@@ -237,7 +227,7 @@ def word_count(word: str, word_input: dict):
 
         # 끝 시간의 밀리초 제거
         for i in range(len(df['end_time'])):
-            each = df['start_time'][i]
+            each = df['end_time'][i]
             if '.' in each:
                 # 밀리초가 있는 경우
                 format_str = '%H:%M:%S.%f'
@@ -246,21 +236,54 @@ def word_count(word: str, word_input: dict):
                 format_str = '%H:%M:%S' 
             df['end_time'][i] = datetime.strptime(each, format_str).strftime('%H:%M:%S')
 
-        # 타임라인 탐색과 빈도수 계산
-        occurrences = Counter()
-        timeline_list = []
-        for i in range(len(df['word'])):
-            if df['word'][i].lower() == word.lower():
-                interval = get_time_interval(df['start_time'][i])
-                occurrences[interval] += 1
+        # 시분초 > 초
+        for i in range(len(df['start_time'])):
+            hour, minute, second = df['start_time'][i].split(':')
+            hour = int(hour)
+            minute = int(minute)
+            second = int(second)
 
+            time = hour * 3600 + minute * 60 + second
+
+            df['start_time'][i] = time
+
+        # 시분초 > 초
+        for i in range(len(df['end_time'])):
+            hour, minute, second = df['end_time'][i].split(':')
+            hour = int(hour)
+            minute = int(minute)
+            second = int(second)
+
+            time = hour * 3600 + minute * 60 + second
+
+            df['end_time'][i] = time
+
+
+        # 타임라인 탐색과 빈도수 계산
+        occurrences = {}
+        intervals = divide_into_intervals(video_length)
+        
+        for interval in intervals:
+            occurrences[interval] = 0
+
+        timeline_list = []
+
+        for i in range(len(df['start_time'])):
+            if df['word'][i].lower() == word.lower():
+                start_time = df['start_time'][i]
+                interval = check(intervals, start_time)
                 timeline_list.append({
-                    "start_time": df['start_time'][i],
+                    "start_time" : df['start_time'][i],
                     "end_time": df['end_time'][i]
                 })
 
+                if interval is not None:
+                    occurrences[interval] += 1
+
+        result_list = [[start, end, value] for (start, end), value in occurrences.items()]
+
         # 타임라인과 빈도수 반환
-        return JSONResponse(content={"timeline": timeline_list, "occurrences": occurrences})
+        return JSONResponse(content={"timeline_list" : timeline_list , "result_list": result_list})
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 ########################################################
