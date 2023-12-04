@@ -8,21 +8,34 @@ import {
   BsFillVolumeUpFill,
   BsFillVolumeMuteFill,
 } from "react-icons/bs";
-import { useRef } from "react";
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
+function formatTime(time) {
+  if (isNaN(time)) return "00:00";
+
+  const date = new Date(time * 1000);
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const seconds = date.getUTCSeconds().toString().padStart(2, "0");
+  if (hours) {
+    return `${hours}:${minutes.toString().padStart(2, "0")} `;
+  } else return `${minutes}:${seconds}`;
+}
+
 function VideoChart(props) {
+  var occurrence = props.occurrence;
+  //occurrence.unshift([0, 0, 0]);
   var color = props.textColor ? "#ffffff" : "#000000";
   const option = {
     chart: {
-      id: "apexchart-example",
+      id: "word-frequency-chart",
       toolbar: { show: false },
       events: {
         click: (event, chartContext, config) => {
-          console.log(config.dataPointIndex);
+          props.setTimeHandler(occurrence[config.dataPointIndex][0]);
         },
       },
       zoom: { enabled: false },
@@ -34,7 +47,7 @@ function VideoChart(props) {
     },
     grid: {
       show: false,
-      padding: { top: -50, right: 0, bottom: 0, left: 0 },
+      padding: { top: -20, right: 0, bottom: 0, left: 0 },
     },
     fill: { colors: ["#66AAF9"] },
     yaxis: {
@@ -44,6 +57,10 @@ function VideoChart(props) {
       axisBorder: { show: false },
     },
     xaxis: {
+      type: "category",
+      categories: occurrence.map(
+        (value) => formatTime(value[0]) + "-" + formatTime(value[1])
+      ),
       labels: { show: true, style: { colors: color } },
       axisTicks: { show: false },
       axisBorder: { show: false },
@@ -57,11 +74,7 @@ function VideoChart(props) {
   const series = [
     {
       name: "등장 횟수",
-      data: [
-        30, 40, 35, 50, 100, 60, 70, 91, 125, 30, 40, 35, 50, 100, 60, 70, 91,
-        125, 30, 40, 35, 50, 100, 60, 70, 91, 125, 30, 40, 35, 50, 100, 60, 70,
-        91, 125, 30, 40, 35, 50, 100,
-      ],
+      data: occurrence.map((value) => value[2]),
     },
   ];
 
@@ -78,31 +91,17 @@ function VideoChart(props) {
   );
 }
 
-function formatTime(time) {
-  if (isNaN(time)) return "00:00";
-
-  const date = new Date(time * 1000);
-  const hours = date.getUTCHours();
-  const minutes = date.getUTCMinutes();
-  const seconds = date.getUTCSeconds().toString().padStart(2, "0");
-  if (hours) {
-    return `${hours}:${minutes.toString().padStart(2, "0")} `;
-  } else return `${minutes}:${seconds}`;
-}
-
-export default function VideoArea() {
+export default function VideoArea({
+  videoState,
+  setVideoState,
+  videoPlayerRef,
+  setTimeHandler,
+  occurrence,
+}) {
   const [mounted, setMounted] = useState(false);
-  const [videoState, setVideoState] = useState({
-    seeking: false,
-    playing: false,
-    muted: false,
-    played: 0,
-  });
-  const videoPlayerRef = useRef(null);
-  const [sliderValue, setSliderValue] = useState(0);
   const { theme, setTheme } = useTheme();
-
   const [wasPlaying, setWasPlaying] = useState(false);
+  const [sliderValue, setSliderValue] = useState(0);
 
   const progressHandler = (state) => {
     if (!videoState.seeking) {
@@ -124,11 +123,6 @@ export default function VideoArea() {
 
   const seekMouseUpHandler = (value) => {
     setVideoState({ ...videoState, playing: wasPlaying, seeking: false });
-  };
-
-  const setTimeHandler = (time, index) => {
-    setVideoState({ ...videoState, played: time });
-    videoPlayerRef.current.seekTo(time, "seconds");
   };
 
   var pauseIcon;
@@ -153,8 +147,6 @@ export default function VideoArea() {
     );
   }
 
-  /** call api **/
-
   return (
     <div className="w-[45vw] h-fit flex flex-col">
       <div className="flex flex-col h-[calc(45vw*9/16)]">
@@ -167,6 +159,9 @@ export default function VideoArea() {
           playing={videoState.playing}
           muted={videoState.muted}
           onProgress={progressHandler}
+          onEnded={() => {
+            videoState.playing = false;
+          }}
         />
       </div>
       <div className="flex flex-row items-center">
@@ -215,6 +210,7 @@ export default function VideoArea() {
       <VideoChart
         setTimeHandler={setTimeHandler}
         textColor={theme == "light"}
+        occurrence={occurrence}
       />
     </div>
   );
