@@ -1,14 +1,47 @@
 "use client";
 import Navigation from "../components/navigation";
-import { Spacer } from "@nextui-org/react";
-import React, {useState} from 'react';
+import { Button, Spacer } from "@nextui-org/react";
+import React, {useEffect, useState} from 'react';
 import { Card } from "@nextui-org/react";
 import axios from 'axios';
 import ButtonProvider from '../components/buttonProvider';
 
+async function onDrop(files, ip) {
+  let formData = new FormData();
+  formData.append("file",files[0])
+  formData.append('ip', new Blob([JSON.stringify(ip)]))
+  
+  await axios
+  .post("http://localhost:8000/upload", formData,{
+    headers: {
+        "Contest-Type": "multipart/form-data"
+    }})
+  
+  .then(response=>{
+    console.log(response);
+    // let variable = {
+    //   ip: ip,
+    // };
+    // axios.post("http://localhost:8000/upload", variable).then((response)=>{
+    //   console.log(response.data);
+    // })
+  })
+  // 오류발생시
+  .catch(error=>{
+      console.error(error);
+  });
+};
 
 function Home() {
-  //const navigate = useNavigate();
+  // get user's ip
+  useEffect(() =>{
+    const res = axios.get('https://geolocation-db.com/json/')
+      .then((res) => {
+        console.log("ip: ", res.data.IPv4)
+        setIp(res.data.IPv4)
+      })
+  }, [])
+  const [ip, setIp] = useState();
   const [file, setFile] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDisabled, setIsDisabled] = useState(true);
@@ -22,24 +55,6 @@ function Home() {
     setIsDisabled(false);
   };
 
-  const onDrop= async (files)=>{
-    let formData = new FormData();
-
-    formData.append("files",files[0])
-    
-    axios({
-      data: formData,
-      headers:{'Content-Type': 'multipart/form-data'},
-    })
-    // 통신 성공했을 때
-    .then(response=>{
-      console.log(response.data);
-    })
-    // 오류발생시
-    .catch(error=>{
-      console.error(error);
-    });
-  };
 
   const ShowVideo = () => {
     if(isDisabled == true){
@@ -50,6 +65,10 @@ function Home() {
         <div>{file.video && <video src={file.url} controls width="450px"/>}</div>
       )
     } 
+  }
+
+  const test = () => {
+    onDrop(file, ip);
   }
 
   var breadcrumbs = [
@@ -77,10 +96,12 @@ function Home() {
           <ShowVideo isDisabled = {isDisabled}/>
           {/* <input type="file" onChange={videoUpload}/> */}
           {/* <div>file.video && <video src={file.url} controls width="400px" /></div> */}
-
         </Card>
+        <Button
+        onClick={test}
+        >axios post test</Button>
       </div>
-      <ButtonProvider isDisabled={isDisabled} link="home"/>
+      <ButtonProvider isDisabled={isDisabled} link="home" data = {file}/>
     </div>
   );
 }

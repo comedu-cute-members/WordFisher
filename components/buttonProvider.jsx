@@ -1,6 +1,27 @@
 import { Button, Link, Spacer } from "@nextui-org/react";
 import { useEffect, useState } from "react";
 
+async function onDrop(files, ip){
+    let formData = new FormData();
+    formData.append("file",files[0])
+    formData.append('ip', new Blob([JSON.stringify(ip)]))
+    
+    await axios
+    .post("http://localhost:8000/upload", formData,{
+        headers: {
+            "Contest-Type": "multipart/form-data"
+        }})
+    // 통신 성공했을 때
+    .then(response=>{
+        console.log(response.data);
+        
+    })
+    // 오류발생시
+    .catch(error=>{
+        console.error(error);
+    });
+};
+
 // props은 home일 때 영상 업로드의 여부를, search땐 검색 단어 입력 여부를 받음
 export default function ButtonProvider(props){
 
@@ -9,13 +30,15 @@ export default function ButtonProvider(props){
     const [nextLink, setNextLink] = useState("");
     const [backLink, setBackLink] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [id, setIp] = useState();
+    
+    var cnt = 0;
 
     useEffect(() =>{
         if(props.link == "home"){
             setNextLink("/search");
             if(props.isDisabled == false){
                 setSearchIsDisabled(false);
-                console.log("search is true"); 
             }
         }
         if(props.link == "search"){
@@ -30,31 +53,21 @@ export default function ButtonProvider(props){
             }
         }
     })
-
-    const onDrop= async (files)=>{
-        let formData = new FormData();
-
-        formData.append("files",files[0])
         
-        axios({
-            data: formData,
-            headers:{'Content-Type': 'multipart/form-data'},
-        })
-        // 통신 성공했을 때
-        .then(response=>{
-            console.log(response.data);
-        })
-        // 오류발생시
-        .catch(error=>{
-            console.error(error);
-        });
-    };
-        
-    const clickHandler = ({ item }) =>{
-        //navigate('/search', {state: {item},});
+    const clickHandler = ({}) =>{
     
         setIsLoading(true);
         //onDrop(file);
+
+        // if it is home, send video to server
+        if(props.link == "home"){
+            onDrop(props.data, props.ip);
+        }
+
+        // if it is search page, send word to result
+        if(props.link == "search"){
+
+        }
     
         setTimeout(()=>{
           setIsLoading(false);
