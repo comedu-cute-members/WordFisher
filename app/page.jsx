@@ -1,18 +1,17 @@
 "use client";
 import Navigation from "../components/navigation";
-import { Button, Link, ButtonGroup, Spacer } from "@nextui-org/react";
-import { ThemeSwitcher } from "../components/themeSwitcher";
-import styled from 'styled-components';
+import { Spacer } from "@nextui-org/react";
 import React, {useState} from 'react';
-import { BrowserRouter, BrowserTouter, useLinkClickHandler, useNavigate } from "react-router-dom";
-import axios from 'axios'
+import { Card } from "@nextui-org/react";
+import axios from 'axios';
+import ButtonProvider from '../components/buttonProvider';
+
 
 function Home() {
   //const navigate = useNavigate();
-  const [mode, setMode] = useState('BLANK');
   const [file, setFile] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(true);
   const videoUpload = e => {
     const videoTpye = e.target.files[0].type.includes('video');
 
@@ -21,7 +20,6 @@ function Home() {
       video: videoTpye,
     });
     setIsDisabled(false);
-    console.log(videoTpye);
   };
 
   const onDrop= async (files)=>{
@@ -43,16 +41,16 @@ function Home() {
     });
   };
 
-  const clickHandler = ({ item }) =>{
-    //navigate('/search', {state: {item},});
-
-    setIsLoading(true);
-    onDrop(file);
-
-    setTimeout(()=>{
-      setIsLoading(false);
-    }, 30000);
-  };
+  const ShowVideo = () => {
+    if(isDisabled == true){
+      return <input type="file" onChange={videoUpload}/>
+    }
+    else if(isDisabled == false){
+      return(
+        <div>{file.video && <video src={file.url} controls width="450px"/>}</div>
+      )
+    } 
+  }
 
   var breadcrumbs = [
     { type: "home", name: "Home", link: "/" },
@@ -70,47 +68,21 @@ function Home() {
       </div>
       
       <Spacer y={50}/>
-      <div class="bg-background light:text-black dark:text-white border-4">
-        <Wrap> 
-          <UploadBox>
-            <h1>Upload your video</h1>
-              <p>
-                <input type="file" onChange={videoUpload}/>
-                {file.video && <video src={file.url} controls width="350px" />}
-              </p>
-              <Button
-                className="text-black/50 bg-blue-100 dark:bg-blue-500 dark:text-white"
-                //onClick={() => clickHandler({file})}
-                onClick={clickHandler}
-                isDisabled={isDisabled}
-                isLoading={isLoading}
-                loadingText="Loading..."
-                as={Link} 
-                href="/search"
-              >
-                Next
-                </Button>
-          </UploadBox>
+      <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white border-4">
+        <Card
           
-        </Wrap>
+          radius="lg"
+          className="flex text-center justify-center border-none h-[250px] items-center"
+        >
+          <ShowVideo isDisabled = {isDisabled}/>
+          {/* <input type="file" onChange={videoUpload}/> */}
+          {/* <div>file.video && <video src={file.url} controls width="400px" /></div> */}
 
-        
+        </Card>
       </div>
-
+      <ButtonProvider isDisabled={isDisabled} link="home"/>
     </div>
   );
 }
-
-const UploadBox = styled.div`
-  flex-direction: column;
-  justify-content: space-between;
-`
-const Wrap = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 70dvh;
-  backgroundColor:'powderblue';
-`;
 
 export default Home;

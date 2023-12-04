@@ -1,11 +1,9 @@
 "use client";
-import { Button, Link, Spacer, Input } from "@nextui-org/react";
-import { NextUIProvider } from "@nextui-org/react";
+import { Spacer, Input } from "@nextui-org/react";
 import Navigation from "../../components/navigation";
-import React, {useState} from 'react';
-import styled from 'styled-components';
+import React, {useEffect, useState} from 'react';
 import {SearchIcon} from "./SearchIcon";
-import { useLocation } from 'react-router-dom';
+import ButtonProvider from "../../components/buttonProvider";
 
 //const location = useLocation();
 //const file = {location};
@@ -13,6 +11,7 @@ import { useLocation } from 'react-router-dom';
 // const string = "give me give me now give me give me now JJJJ"
 function Search() {
   const [searchText, setSearchText] = useState("");
+  const [isDisabled, setIsDisabled] = useState(true);
 
   var breadcrumbs = [
     { type: "home", name: "Home", link: "/" },
@@ -22,39 +21,25 @@ function Search() {
       link: "/search",
     },
   ];
-
-<style>
-  .button-info{ 
-     "text-black/50 bg-blue-100 max-w-30 shadow-lg dark:bg-blue-500 dark:text-white"
-  }
-</style>
-
-  // const onDrop= async (files)=>{
-  //   let formData = new FormData();
-
-  //   formData.append("files",files[0])
-    
-  //   axios({
-  //     data: formData,
-  //     headers:{'Content-Type': 'multipart/form-data'},
-  //   })
-  //   // 통신 성공했을 때
-  //   .then(response=>{
-  //     console.log(response.data);
-  //   })
-  //   // 오류발생시
-  //   .catch(error=>{
-  //     console.error(error);
-  //   });
-  // };
   
+  useEffect(()=>{
+    if(searchText.length > 1){
+      console.log("HI");
+      setIsDisabled(false);
+    }  
+    else{
+      console.log("Hello");
+      setIsDisabled(true);
+    }
+  })
+
 
   return (
     <div className="bg-background">
       <div className="flex flex-col">
         <Navigation breadcrumbs={breadcrumbs} />
       </div>
-      <div className="grid place-items-center mt-4 h-[300px] p-10 bg-background border-4">
+      <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white border-4">
 
         <div>
           <p>
@@ -65,7 +50,7 @@ function Search() {
             isClearable
             label="Search"
             variant="bordered"
-            placeholder="Enter what you wanna search"
+            placeholder="Enter what you want to search"
             className="w-[400px] dark:text-white/90"
             onValueChange={setSearchText}
             startContent={
@@ -73,22 +58,11 @@ function Search() {
             }
           />
         <p className="text-default-500">Search Text: {searchText}</p>
+        <p className="text-default-500">length Text: {searchText.length}</p>
         <Spacer y={50}/>
       </div>
       
-      {/* button place */}
-      <div className="flex flex-row my-auto justify-center border-4">
-        <Button className="text-black/50 bg-blue-100 max-w-30 shadow-lg dark:bg-blue-500 dark:text-white" as={Link} href="../">
-          Back
-        </Button>
-        <Spacer x={300}/>
-        <Button 
-        className="text-black/50 bg-blue-100 max-w-30 shadow-lg dark:bg-blue-500 dark:text-white" as={Link} href="/result"
-        //onClick={onDrop()}
-        >
-          Search!
-        </Button>
-      </div>
+      <ButtonProvider isDisabled={isDisabled} link="search"/>
     </div>
   );
 }
