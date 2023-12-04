@@ -15,6 +15,7 @@ from datetime import datetime
 from pydantic import BaseModel
 import json
 import wave
+from fastapi.middleware.cors import CORSMiddleware
 
 # 구글 서비스 계정 인증을 위한 환경변수 설정
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "word_fisher_credentials.json"
@@ -24,6 +25,18 @@ bucket_name = "word_fisher"
 
 # FastAPI 애플리케이션 객체 생성
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 ##################### 함수 구현부 #######################
 # 구글 클라우드에 파일 업로드
