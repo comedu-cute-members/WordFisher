@@ -12,8 +12,6 @@ function Search() {
   const [isDisabled, setIsDisabled] = useState(true);
   const [data, setData] = useRecoilState(dataState);
 
-  console.log(data);
-
   var breadcrumbs = [
     { type: "home", name: "Home", link: "/" },
     {
@@ -32,31 +30,31 @@ function Search() {
   }, [searchText.length]);
 
   return (
-    <div className="bg-background">
-      <div className="flex flex-col">
+    <div className="bg-background h-screen">
+      <div className="flex flex-col h-full">
         <Navigation breadcrumbs={breadcrumbs} />
-      </div>
-      <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white">
-        <div>
-          <p>
-            {/* {file.video && <video src={file.url} controls width="350px" />} */}
-          </p>
+        <div className="flex-1 flex flex-col justify-center items-center bg-background light:text-black dark:text-white">
+          <div className="">
+            {data.file && <video src={data.url} controls width="450px" />}
+          </div>
+          <Input
+            isClearable
+            label="Search"
+            variant="bordered"
+            placeholder="Enter what you want to search"
+            className="w-[400px] dark:text-white/90 py-10"
+            onValueChange={setSearchText}
+            startContent={
+              <SearchIcon className="text-black/50 mb-0.5 text-slate-400 pointer-events-none flex-shrink-0" />
+            }
+          />
+          <ButtonProvider
+            isDisabled={isDisabled}
+            link="search"
+            word={searchText}
+          />
         </div>
-        <Input
-          isClearable
-          label="Search"
-          variant="bordered"
-          placeholder="Enter what you want to search"
-          className="w-[400px] dark:text-white/90"
-          onValueChange={setSearchText}
-          startContent={
-            <SearchIcon className="text-black/50 mb-0.5 text-slate-400 pointer-events-none flex-shrink-0" />
-          }
-        />
-        <Spacer y={50} />
       </div>
-
-      <ButtonProvider isDisabled={isDisabled} link="search" word={searchText} />
     </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 import Navigation from "../components/navigation";
-import { Button, Spacer } from "@nextui-org/react";
+import { Button, Spacer, Input } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import { Card } from "@nextui-org/react";
 import axios from "axios";
+import styled from "styled-components";
 import ButtonProvider from "../components/buttonProvider";
 
 function Home() {
@@ -20,6 +21,7 @@ function Home() {
   }, []);
 
   const videoUpload = (e) => {
+    console.log(e.target.files[0]);
     const video = e.target.files[0];
 
     setFile({
@@ -33,14 +35,14 @@ function Home() {
   const ShowVideo = () => {
     if (isDisabled == true) {
       return (
-        <div className="justify-center">
+        <>
           <input type="file" onChange={videoUpload} />
-        </div>
+        </>
       );
     } else if (isDisabled == false) {
       return (
         <div>
-          {file.video && <video src={file.url} controls width="450px" />}
+          {file.video && <video src={file.url} controls width="600px" />}
         </div>
       );
     }
@@ -58,7 +60,7 @@ function Home() {
       <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white">
         <Card
           radius="lg"
-          className="flex text-center justify-center border-none h-[250px] items-center"
+          className="flex w-[600px] text-center justify-center border-none h-[330px] items-center"
         >
           <ShowVideo isDisabled={isDisabled} />
         </Card>

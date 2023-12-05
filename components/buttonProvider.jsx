@@ -81,7 +81,7 @@ export default function ButtonProvider(props) {
   };
 
   return (
-    <div className="flex flex-row my-auto justify-center">
+    <div className="flex flex-row justify-center">
       <Button
         onClick={clickHandler}
         isLoading={isLoading}

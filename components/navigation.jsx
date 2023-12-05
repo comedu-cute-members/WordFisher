@@ -11,6 +11,7 @@ import { BiSolidHome, BiSolidVideos, BiSolidSearchAlt2 } from "react-icons/bi";
 import { Breadcrumbs, BreadcrumbItem } from "@nextui-org/react";
 import { GiFishing } from "react-icons/gi";
 import { ThemeSwitcher } from "./themeSwitcher";
+import { useRouter } from "next/navigation";
 
 function provideIcon(type) {
   if (type == "home") return <BiSolidHome />;
@@ -19,6 +20,7 @@ function provideIcon(type) {
 }
 
 const Navigation = ({ breadcrumbs }) => {
+  const router = useRouter();
   return (
     <Navbar isBordered classNames={{ wrapper: "max-w-[2000px] px-10" }}>
       <NavbarBrand>
@@ -32,7 +34,9 @@ const Navigation = ({ breadcrumbs }) => {
               <BreadcrumbItem
                 key={item.type}
                 startContent={provideIcon(item.type)}
-                href={item.link}
+                onPress={() => {
+                  router.push(item.link);
+                }}
               >
                 {item.name}
               </BreadcrumbItem>

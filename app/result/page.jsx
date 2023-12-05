@@ -9,8 +9,6 @@ import { useRecoilState } from "recoil";
 import { dataState } from "../../components/recoil";
 
 async function searchWord(word, word_input, setResponse) {
-  //get data, word from search page
-
   await axios
     .post("http://localhost:8000/word_input/" + word, word_input)
     .then((response) => {
