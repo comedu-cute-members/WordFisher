@@ -12,8 +12,7 @@ function Search() {
   const [isDisabled, setIsDisabled] = useState(true);
   const [data, setData] = useRecoilState(dataState);
 
-  // get data from previous page
-  console.log(data.response);
+  console.log(data);
 
   var breadcrumbs = [
     { type: "home", name: "Home", link: "/" },
@@ -37,7 +36,7 @@ function Search() {
       <div className="flex flex-col">
         <Navigation breadcrumbs={breadcrumbs} />
       </div>
-      <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white border-4">
+      <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white">
         <div>
           <p>
             {/* {file.video && <video src={file.url} controls width="350px" />} */}
@@ -54,12 +53,10 @@ function Search() {
             <SearchIcon className="text-black/50 mb-0.5 text-slate-400 pointer-events-none flex-shrink-0" />
           }
         />
-        <p className="text-default-500">Search Text: {searchText}</p>
-        <p className="text-default-500">length Text: {searchText.length}</p>
         <Spacer y={50} />
       </div>
 
-      <ButtonProvider isDisabled={isDisabled} link="search" />
+      <ButtonProvider isDisabled={isDisabled} link="search" word={searchText} />
     </div>
   );
 }

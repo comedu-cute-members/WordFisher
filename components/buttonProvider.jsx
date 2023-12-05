@@ -7,13 +7,15 @@ import axios from "axios";
 
 async function onDrop(file, ip, setIsLoading, data, setData, router) {
   let formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", file.send);
   formData.append("ip", ip);
 
-  setData({
-    file: file,
+  setData((prev) => ({
+    ...prev,
+    file: file.send,
+    url: file.url,
     ip: ip,
-  });
+  }));
 
   await axios
     .post("http://localhost:8000/upload", formData, {
@@ -23,11 +25,8 @@ async function onDrop(file, ip, setIsLoading, data, setData, router) {
     })
     // 통신 성공했을 때
     .then((response) => {
-      //console.log(response.data);
+      setData((prev) => ({ ...prev, response: response.data }));
       setIsLoading(false);
-
-      // next page
-      setData({ ...data, response: response.data });
       router.push("/search");
     })
     // 오류발생시
@@ -71,11 +70,13 @@ export default function ButtonProvider(props) {
 
     // if it is home, send video to server
     if (props.link == "home") {
-      onDrop(props.file.send, props.ip, setIsLoading, data, setData, router);
+      onDrop(props.file, props.ip, setIsLoading, data, setData, router);
     }
 
     // if it is search page, send word to result
     if (props.link == "search") {
+      setData({ ...data, word: props.word });
+      router.push("/result");
     }
   };
 

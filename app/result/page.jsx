@@ -5,17 +5,11 @@ import ListArea from "../../components/listarea";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useState, useRef } from "react";
 import axios from "axios";
+import { useRecoilState } from "recoil";
+import { dataState } from "../../components/recoil";
 
-async function searchWord(word, setResponse) {
+async function searchWord(word, word_input, setResponse) {
   //get data, word from search page
-  var word_input = {
-    audio_data_list: [
-      ["알고리즘", "0:00:00", "0:00:03"],
-      ["네", "0:00:03", "0:00:06"],
-      ["알고리즘", "0:00:11.300000", "0:00:14.500000"],
-    ],
-    video_length: 34.2,
-  };
 
   await axios
     .post("http://localhost:8000/word_input/" + word, word_input)
@@ -33,40 +27,27 @@ export default function Result() {
   });
   const videoPlayerRef = useRef(null);
   const [response, setResponse] = useState(null);
-
-  //get data
-  var word = "알고리즘";
+  const [data, setData] = useRecoilState(dataState);
 
   // call api
   if (!response) {
-    searchWord(word, setResponse);
+    searchWord(data.word, data.response, setResponse);
   }
 
   const setTimeHandler = (second) => {
     videoPlayerRef.current.seekTo(second, "seconds");
   };
 
-  const handleVideoUpload = (event) => {
-    if (event.target.files.length) {
-      var path = URL.createObjectURL(event.target.files[0]);
-      var video = document.createElement("video");
-      video.src = path;
-      video.ondurationchange = () => {
-        console.log(video.duration);
-      };
-    }
-  };
-
   var breadcrumbs = [
     { type: "home", name: "Home", link: "/" },
     {
       type: "search",
-      name: "알고리즘 4주차 강의",
+      name: data.file.name,
       link: "/search",
     },
     {
       type: "result",
-      name: "brute force",
+      name: data.word,
       link: "/result",
     },
   ];
@@ -78,6 +59,7 @@ export default function Result() {
           <Navigation breadcrumbs={breadcrumbs} />
           <div className="w-full h-[calc(100vh-65px)] flex flex-row gap-8 py-8 justify-center">
             <VideoArea
+              videoURL={data.url}
               videoState={videoState}
               setVideoState={setVideoState}
               videoPlayerRef={videoPlayerRef}
@@ -85,7 +67,7 @@ export default function Result() {
               occurrence={response.result_list}
             />
             <ListArea
-              word={word}
+              word={data.word}
               timeline={response.timeline_list}
               setTimeHandler={setTimeHandler}
             />

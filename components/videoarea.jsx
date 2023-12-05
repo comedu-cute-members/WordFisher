@@ -92,6 +92,7 @@ function VideoChart(props) {
 }
 
 export default function VideoArea({
+  videoURL,
   videoState,
   setVideoState,
   videoPlayerRef,
@@ -154,7 +155,7 @@ export default function VideoArea({
           ref={videoPlayerRef}
           width={"100%"}
           height={"100%"}
-          url="video/temp.mp4"
+          url={videoURL}
           controls={false}
           playing={videoState.playing}
           muted={videoState.muted}
