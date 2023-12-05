@@ -6,45 +6,19 @@ import { Card } from "@nextui-org/react";
 import axios from "axios";
 import ButtonProvider from "../components/buttonProvider";
 
-async function onDrop(files, ip) {
-  let formData = new FormData();
-  formData.append("file", files.send);
-  formData.append("ip", ip);
-
-  await axios
-    .post("http://localhost:8000/upload", formData, {
-      headers: {
-        "Contest-Type": "multipart/form-data",
-      },
-    })
-
-    .then((response) => {
-      console.log(response);
-      // let variable = {
-      //   ip: ip,
-      // };
-      // axios.post("http://localhost:8000/upload", variable).then((response)=>{
-      //   console.log(response.data);
-      // })
-    })
-    // 오류발생시
-    .catch((error) => {
-      console.error(error);
-    });
-}
-
 function Home() {
+  const [ip, setIp] = useState();
+  const [file, setFile] = useState({});
+  const [isDisabled, setIsDisabled] = useState(true);
+
   // get user's ip
   useEffect(() => {
-    const res = axios.get("https://geolocation-db.com/json/").then((res) => {
+    axios.get("https://geolocation-db.com/json/").then((res) => {
       console.log("ip: ", res.data.IPv4);
       setIp(res.data.IPv4);
     });
   }, []);
-  const [ip, setIp] = useState();
-  const [file, setFile] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(true);
+
   const videoUpload = (e) => {
     const video = e.target.files[0];
 
@@ -58,7 +32,11 @@ function Home() {
 
   const ShowVideo = () => {
     if (isDisabled == true) {
-      return <input type="file" onChange={videoUpload} />;
+      return (
+        <div className="justify-center">
+          <input type="file" onChange={videoUpload} />
+        </div>
+      );
     } else if (isDisabled == false) {
       return (
         <div>
@@ -66,10 +44,6 @@ function Home() {
         </div>
       );
     }
-  };
-
-  const test = () => {
-    onDrop(file, ip);
   };
 
   var breadcrumbs = [{ type: "home", name: "Home", link: "/" }];
@@ -81,18 +55,15 @@ function Home() {
       </div>
 
       <Spacer y={50} />
-      <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white border-4">
+      <div className="flex flex-col h-[400px] justify-center items-center bg-background light:text-black dark:text-white">
         <Card
           radius="lg"
           className="flex text-center justify-center border-none h-[250px] items-center"
         >
           <ShowVideo isDisabled={isDisabled} />
-          {/* <input type="file" onChange={videoUpload}/> */}
-          {/* <div>file.video && <video src={file.url} controls width="400px" /></div> */}
         </Card>
-        <Button onClick={test}>axios post test</Button>
       </div>
-      <ButtonProvider isDisabled={isDisabled} link="home" data={file} />
+      <ButtonProvider isDisabled={isDisabled} link="home" file={file} ip={ip} />
     </div>
   );
 }
