@@ -8,8 +8,8 @@ import ButtonProvider from "../components/buttonProvider";
 
 async function onDrop(files, ip) {
   let formData = new FormData();
-  formData.append("file", files.video);
-  formData.append("ip", JSON.stringify(ip));
+  formData.append("file", files.send);
+  formData.append("ip", ip);
 
   await axios
     .post("http://localhost:8000/upload", formData, {
@@ -50,6 +50,7 @@ function Home() {
 
     setFile({
       url: URL.createObjectURL(e.target.files[0]),
+      send: video,
       video: video.type.includes("video"),
     });
     setIsDisabled(false);
