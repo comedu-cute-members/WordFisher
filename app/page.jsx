@@ -1,6 +1,6 @@
 "use client";
 import Navigation from "../components/navigation";
-import { Button, Spacer, Input } from "@nextui-org/react";
+import { Spacer } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import { Card } from "@nextui-org/react";
 import axios from "axios";

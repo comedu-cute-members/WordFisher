@@ -79,12 +79,12 @@ function VideoChart(props) {
   ];
 
   return (
-    <div className="h-[150px]">
+    <div className="overflow-hidden">
       <ApexChart
         type="area"
         options={option}
         series={series}
-        height="100%"
+        height="200px"
         width="100%"
       />
     </div>
@@ -149,7 +149,7 @@ export default function VideoArea({
   }
 
   return (
-    <div className="w-[45vw] h-fit flex flex-col">
+    <div className="w-[45vw] h-full flex flex-col">
       <div className="flex flex-col h-[calc(45vw*9/16)]">
         <ReactPlayer
           ref={videoPlayerRef}
